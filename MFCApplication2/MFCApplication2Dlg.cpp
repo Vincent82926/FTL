@@ -7,6 +7,8 @@
 #include "MFCApplication2.h"
 #include "MFCApplication2Dlg.h"
 #include "afxdialogex.h"
+#include <stdlib.h> // rand()
+#include <time.h>   // time()
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -190,14 +192,15 @@ CString printBufferData(u32 lba, u8* writeBuf, u8* readBuf) {
 
 	return strText;
 }
+
 bool m_onClose = false;
 void CMFCApplication2Dlg::OnBnClickedButton1()
 {
 	// TODO: 在此加入控制項告知處理常式程式碼
+	CString msg;
 
 	u8 writeBuf[SECTOR_SIZE];
 	u8 readBuf[SECTOR_SIZE];
-	CString msg;
 	for (u32 lba = 0; lba < (2 * 1024); lba++) {
 		update_message();
 
@@ -232,7 +235,7 @@ void CMFCApplication2Dlg::OnBnClickedButton1()
 
 	
 	}
-	MessageBox("finish");
+	MessageBox("finish seq");
 }
 
 
@@ -243,8 +246,48 @@ void CMFCApplication2Dlg::OnClose()
 	m_onClose = true;
 }
 
-
 void CMFCApplication2Dlg::OnBnClickedButton2()
 {
 	// TODO: 在此加入控制項告知處理常式程式碼
+	CString msg;
+	int slba = rand() %  (2 * 1024) + 1; 
+	int elba = rand() % ((2 * 1024) - slba) + 1; 
+
+	u8 writeBuf[SECTOR_SIZE];
+	u8 readBuf[SECTOR_SIZE];
+	
+	for (u32 lba = slba; lba < elba; lba++) {
+	//for (u32 lba = 0; lba < (2 * 1024); lba++) {
+		update_message();
+
+		if (m_onClose) {
+			return;
+		}
+
+		u8 len = 1;
+		memset(writeBuf, lba, sizeof(u8) * SECTOR_SIZE);
+
+		lbaWrite(lba, len, writeBuf);
+		lbaRead(lba, len, readBuf);
+
+		int res = memcmp(writeBuf, readBuf, sizeof(writeBuf));
+
+		if (res != 0) {
+			MessageBox("error");
+		}
+
+		msg = printBufferData(lba, writeBuf, readBuf) + "\r\n";
+		//txt.SetWindowTextA(msg); 
+
+		//用 append 的方式，加訊息到 editbox 的尾端
+		int nLength = txt.GetWindowTextLength();
+		// put the selection at the end of text
+		txt.SetSel(nLength, nLength);
+		// replace the selection
+		txt.ReplaceSel(msg);
+
+	}
+
+	MessageBox("finish rand");
 }
+
